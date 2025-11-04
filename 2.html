@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>විෂය කාල ට්‍රැකර්</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-primary: #eff6ff;
+            --bg-secondary: #ffffff;
+            --text-primary: #312e81;
+            --text-secondary: #4f46e5;
+            --watch-bg: linear-gradient(145deg, #f0f0f0, #cacaca);
+            --watch-inner: #ffffff;
+            --watch-shadow: #bebebe;
+            --watch-shadow-light: #ffffff;
+            --watch-mark: #333333;
+            --watch-text: #333333;
+            --card-shadow: rgba(0, 0, 0, 0.1);
+            --border-color: #e0e7ff;
+        }
+        
+        .dark-theme {
+            --bg-primary: #1e1b4b;
+            --bg-secondary: #2d3748;
+            --text-primary: #e0e7ff;
+            --text-secondary: #a5b4fc;
+            --watch-bg: linear-gradient(145deg, #374151, #1f2937);
+            --watch-inner: #1f2937;
+            --watch-shadow: #111827;
+            --watch-shadow-light: #4b5563;
+            --watch-mark: #e5e7eb;
+            --watch-text: #f3f4f6;
+            --card-shadow: rgba(0, 0, 0, 0.3);
+            --border-color: #4b5563;
+        }
+        
+        body {
+            background: var(--bg-primary);
+            transition: background 0.3s ease;
+        }
+        
+        .watch-face {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: var(--watch-bg);
+            box-shadow: 5px 5px 15px var(--watch-shadow), -5px -5px 15px var(--watch-shadow-light);
+            position: relative;
+            margin: 0 auto;
+            transition: all 0.3s ease;
+        }
+        
+        .watch-inner {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: var(--watch-inner);
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            box-shadow: inset 2px 2px 5px var(--card-shadow);
+            transition: all 0.3s ease;
+        }
+        
+        .watch-center {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--watch-mark);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+        
+        .watch-hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            transition: all 0.3s ease;
+        }
+        
+        .hand-hour {
+            width: 4px;
+            height: 50px;
+            margin-left: -2px;
+            background: var(--watch-mark);
+            border-radius: 2px 2px 0 0;
+        }
+        
+        .hand-minute {
+            width: 3px;
+            height: 70px;
+            margin-left: -1.5px;
+            background: var(--watch-mark);
+            border-radius: 2px 2px 0 0;
+        }
+        
+        .hand-second {
+            width: 2px;
+            height: 80px;
+            margin-left: -1px;
+            background: #e74c3c;
+            border-radius: 2px 2px 0 0;
+        }
+        
+        .watch-mark {
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background: var(--watch-mark);
+            left: 50%;
+            margin-left: -1px;
+            transform-origin: center 90px;
+            transition: all 0.3s ease;
+        }
+        
+        .watch-number {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--watch-text);
+            transition: all 0.3s ease;
+        }
+        
+        .card {
+            background: var(--bg-secondary);
+            transition: background 0.3s ease;
+        }
+        
+        .text-theme {
+            color: var(--text-primary);
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .task-item {
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .task-item.completed {
+            opacity: 0.6;
+        }
+        
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+        }
+        
+        .task-item.running {
+            animation: pulse 2s ease-in-out infinite;
+            background: linear-gradient(90deg, 
+                var(--bg-secondary) 0%, 
+                rgba(16, 185, 129, 0.1) 50%, 
+                var(--bg-secondary) 100%) !important;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+            }
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #cbd5e1;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .toggle-switch:hover {
+            transform: scale(1.05);
+        }
+        
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .toggle-switch.active::after {
+            left: 26px;
+            background: #f0fdf4;
+        }
+        
+        .toggle-switch::before {
+            content: '▶';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #64748b;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-switch.active::before {
+            content: '⏸';
+            left: 6px;
+            right: auto;
+            color: white;
+        }
+        
+        .task-timer {
+            font-size: 11px;
+            font-weight: 600;
+            color: #10b981;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .task-timer.running {
+            animation: blink 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .todo-input {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6">
+    <button onclick="toggleTheme()" class="theme-toggle bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold transition shadow-lg">
+        <span id="themeIcon">🌙</span> <span id="themeText">ඩාර්ක්</span>
+    </button>
+    
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-4xl font-bold text-center text-theme mb-8">විෂය කාල ට්‍රැකර්</h1>
+        
+        <div class="card rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex gap-4 mb-4">
+                <input type="text" id="subjectInput" placeholder="විෂයේ නම ඇතුළත් කරන්න" 
+                    class="flex-1 px-4 py-2 border-2 border-indigo-300 rounded-lg focus:outline-none focus:border-indigo-500">
+                <button onclick="addSubject()" 
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-semibold transition">
+                    විෂයක් එකතු කරන්න
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="lg:col-span-2">
+                <div id="subjectsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+            </div>
+            
+            <div class="card rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-theme mb-4">වාඩ ලයිස්තුව</h2>
+                <div id="todoContainer" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <div class="card rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-theme mb-4 text-center">24 පැය කාල බෙදුම</h2>
+            <div class="relative" style="height: 400px;">
+                <canvas id="timeChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let subjects = {};
+        let chart = null;
+        let isDarkTheme = false;
+
+        function toggleTheme() {
+            isDarkTheme = !isDarkTheme;
+            const body = document.body;
+            const icon = document.getElementById('themeIcon');
+            const text = document.getElementById('themeText');
+            
+            if (isDarkTheme) {
+                body.classList.add('dark-theme');
+                icon.textContent = '☀️';
+                text.textContent = 'ලයිට්';
+            } else {
+                body.classList.remove('dark-theme');
+                icon.textContent = '🌙';
+                text.textContent = 'ඩාර්ක්';
+            }
+            
+            localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
+            updateChart();
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                isDarkTheme = true;
+                document.body.classList.add('dark-theme');
+                document.getElementById('themeIcon').textContent = '☀️';
+                document.getElementById('themeText').textContent = 'ලයිට්';
+            }
+        }
+
+        function initializeData() {
+            const saved = localStorage.getItem('subjects');
+            subjects = saved ? JSON.parse(saved) : {};
+            renderSubjects();
+            renderAllTodos();
+            updateChart();
+        }
+
+        function addSubject() {
+            const input = document.getElementById('subjectInput');
+            const name = input.value.trim();
+            
+            if (name && !subjects[name]) {
+                subjects[name] = {
+                    totalTime: 0,
+                    isRunning: false,
+                    startTime: null,
+                    isPaused: false,
+                    todos: [],
+                    color: getRandomColor()
+                };
+                input.value = '';
+                saveData();
+                renderSubjects();
+                renderAllTodos();
+                updateChart();
+            }
+        }
+
+        function getRandomColor() {
+            const colors = [
+                '#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6',
+                '#ef4444', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function createWatchFace(name) {
+            const container = document.createElement('div');
+            container.className = 'card rounded-lg shadow-lg p-6';
+            
+            let marksHtml = '';
+            for (let i = 0; i < 60; i++) {
+                const angle = i * 6;
+                const height = i % 5 === 0 ? 10 : 5;
+                const width = i % 5 === 0 ? 2 : 1;
+                marksHtml += `<div class="watch-mark" style="height: ${height}px; width: ${width}px; transform: rotate(${angle}deg) translateY(-85px);"></div>`;
+            }
+            
+            const numbers = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+            let numbersHtml = '';
+            numbers.forEach((num, i) => {
+                const angle = i * 30 * Math.PI / 180;
+                const radius = 70;
+                const x = 90 + radius * Math.sin(angle) - 7;
+                const y = 90 - radius * Math.cos(angle) - 7;
+                numbersHtml += `<div class="watch-number" style="left: ${x}px; top: ${y}px;">${num}</div>`;
+            });
+            
+            container.innerHTML = `
+                <h3 class="text-xl font-bold text-theme mb-4 text-center">${name}</h3>
+                <div class="watch-face">
+                    <div class="watch-inner">
+                        ${marksHtml}
+                        ${numbersHtml}
+                        <div class="watch-hand hand-hour" id="hour-${name}"></div>
+                        <div class="watch-hand hand-minute" id="minute-${name}"></div>
+                        <div class="watch-hand hand-second" id="second-${name}"></div>
+                        <div class="watch-center"></div>
+                    </div>
+                </div>
+                <div class="text-center mt-4 text-2xl font-bold text-theme" id="time-${name}">00:00:00</div>
+                <div class="flex gap-2 mt-4">
+                    <button onclick="toggleTimer('${name}')" id="btn-${name}"
+                        class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-semibold transition">
+                        ආරම්භ කරන්න
+                    </button>
+                    <button onclick="pauseTimer('${name}')" id="pause-${name}"
+                        class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg font-semibold transition" disabled>
+                        විරාමය
+                    </button>
+                    <button onclick="deleteSubject('${name}')"
+                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition">
+                        මකන්න
+                    </button>
+                </div>
+            `;
+            
+            return container;
+        }
+
+        function renderSubjects() {
+            const container = document.getElementById('subjectsContainer');
+            container.innerHTML = '';
+            
+            Object.keys(subjects).forEach(name => {
+                container.appendChild(createWatchFace(name));
+                updateWatchDisplay(name);
+            });
+        }
+
+        function toggleTimer(name) {
+            const subject = subjects[name];
+            
+            if (subject.isRunning) {
+                const elapsed = Date.now() - subject.startTime;
+                subject.totalTime += elapsed;
+                subject.isRunning = false;
+                subject.startTime = null;
+                document.getElementById(`btn-${name}`).textContent = 'ආරම්භ කරන්න';
+                document.getElementById(`btn-${name}`).className = 'flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-semibold transition';
+                document.getElementById(`pause-${name}`).disabled = true;
+            } else {
+                subject.isRunning = true;
+                subject.isPaused = false;
+                subject.startTime = Date.now();
+                document.getElementById(`btn-${name}`).textContent = 'නවත්වන්න';
+                document.getElementById(`btn-${name}`).className = 'flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg font-semibold transition';
+                document.getElementById(`pause-${name}`).disabled = false;
+            }
+            
+            saveData();
+            updateChart();
+        }
+
+        function pauseTimer(name) {
+            const subject = subjects[name];
+            
+            if (subject.isRunning && !subject.isPaused) {
+                const elapsed = Date.now() - subject.startTime;
+                subject.totalTime += elapsed;
+                subject.isPaused = true;
+                subject.isRunning = false;
+                subject.startTime = null;
+                document.getElementById(`btn-${name}`).textContent = 'දිගටම කරන්න';
+                document.getElementById(`btn-${name}`).className = 'flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-semibold transition';
+            }
+            
+            saveData();
+        }
+
+        function deleteSubject(name) {
+            if (confirm(`"${name}" විෂය මකා දමන්න ද?`)) {
+                delete subjects[name];
+                saveData();
+                renderSubjects();
+                renderAllTodos();
+                updateChart();
+            }
+        }
+
+        function updateWatchDisplay(name) {
+            const subject = subjects[name];
+            let totalMs = subject.totalTime;
+            
+            if (subject.isRunning && subject.startTime) {
+                totalMs += Date.now() - subject.startTime;
+            }
+            
+            const hours = Math.floor(totalMs / 3600000);
+            const minutes = Math.floor((totalMs % 3600000) / 60000);
+            const seconds = Math.floor((totalMs % 60000) / 1000);
+            
+            const timeDisplay = document.getElementById(`time-${name}`);
+            if (timeDisplay) {
+                timeDisplay.textContent = 
+                    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+            
+            const hourHand = document.getElementById(`hour-${name}`);
+            const minuteHand = document.getElementById(`minute-${name}`);
+            const secondHand = document.getElementById(`second-${name}`);
+            
+            if (hourHand && minuteHand && secondHand) {
+                const hourAngle = ((hours % 12) * 30) + (minutes * 0.5);
+                const minuteAngle = minutes * 6;
+                const secondAngle = seconds * 6;
+                
+                hourHand.style.transform = `rotate(${hourAngle}deg)`;
+                minuteHand.style.transform = `rotate(${minuteAngle}deg)`;
+                secondHand.style.transform = `rotate(${secondAngle}deg)`;
+            }
+        }
+
+        function renderAllTodos() {
+            const container = document.getElementById('todoContainer');
+            container.innerHTML = '';
+            
+            Object.keys(subjects).forEach(subjectName => {
+                const subject = subjects[subjectName];
+                const subjectDiv = document.createElement('div');
+                subjectDiv.className = 'mb-4';
+                
+                subjectDiv.innerHTML = `
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-3 h-3 rounded-full" style="background: ${subject.color}"></div>
+                        <h3 class="font-bold text-theme">${subjectName}</h3>
+                    </div>
+                    <div class="flex gap-2 mb-2">
+                        <input type="text" id="todo-input-${subjectName}" placeholder="නව වාඩක් එකතු කරන්න" 
+                            class="flex-1 px-3 py-2 text-sm rounded-lg todo-input focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button onclick="addTodo('${subjectName}')" 
+                            class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition">
+                            +
+                        </button>
+                    </div>
+                    <div id="todos-${subjectName}" class="space-y-2"></div>
+                `;
+                
+                container.appendChild(subjectDiv);
+                renderTodos(subjectName);
+                
+                document.getElementById(`todo-input-${subjectName}`).addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') addTodo(subjectName);
+                });
+            });
+        }
+
+        function addTodo(subjectName) {
+            const input = document.getElementById(`todo-input-${subjectName}`);
+            const text = input.value.trim();
+            
+            if (text) {
+                if (!subjects[subjectName].todos) {
+                    subjects[subjectName].todos = [];
+                }
+                subjects[subjectName].todos.push({
+                    id: Date.now(),
+                    text: text,
+                    completed: false,
+                    completedTime: 0,
+                    isRunning: false,
+                    startTime: null,
+                    activeTime: 0
+                });
+                input.value = '';
+                saveData();
+                renderTodos(subjectName);
+            }
+        }
+
+        function renderTodos(subjectName) {
+            const container = document.getElementById(`todos-${subjectName}`);
+            if (!container) return;
+            
+            const subject = subjects[subjectName];
+            if (!subject.todos || subject.todos.length === 0) {
+                container.innerHTML = '<p class="text-sm text-theme opacity-60">වාඩ නැත</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            subject.todos.forEach(todo => {
+                const todoDiv = document.createElement('div');
+                todoDiv.className = `task-item p-3 rounded-lg ${todo.completed ? 'completed' : ''} ${todo.isRunning ? 'running' : ''}`;
+                todoDiv.style.borderColor = subject.color;
+                todoDiv.style.background = isDarkTheme ? '#374151' : '#f9fafb';
+                
+                let currentTime = todo.activeTime || 0;
+                if (todo.isRunning && todo.startTime) {
+                    currentTime += Date.now() - todo.startTime;
+                }
+                
+                const timerDisplay = currentTime > 0 ? `
+                    <div class="task-timer ${todo.isRunning ? 'running' : ''}">
+                        ⏱️ ${formatTime(currentTime)}
+                    </div>
+                ` : '';
+                
+                todoDiv.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <input type="checkbox" ${todo.completed ? 'checked' : ''} 
+                            onchange="toggleTodo('${subjectName}', ${todo.id})"
+                            class="mt-1 w-4 h-4 rounded cursor-pointer"
+                            ${todo.isRunning ? 'disabled' : ''}>
+                        <div class="flex-1">
+                            <p class="text-sm text-theme task-text">${todo.text}</p>
+                            ${timerDisplay}
+                            ${todo.completed && todo.completedTime ? 
+                                `<p class="text-xs opacity-60 text-theme mt-1">මුළු කාලය: ${formatTime(todo.completedTime)}</p>` : ''}
+                        </div>
+                        ${!todo.completed ? `
+                            <div class="toggle-switch ${todo.isRunning ? 'active' : ''}" 
+                                onclick="toggleTaskTimer('${subjectName}', ${todo.id})"
+                                title="${todo.isRunning ? 'නවත්වන්න' : 'ආරම්භ කරන්න'}">
+                            </div>
+                        ` : ''}
+                        <button onclick="deleteTodo('${subjectName}', ${todo.id})" 
+                            class="text-red-500 hover:text-red-700 text-lg font-bold leading-none"
+                            style="margin-top: -2px;">
+                            ×
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(todoDiv);
+            });
+        }
+
+        function toggleTaskTimer(subjectName, todoId) {
+            const subject = subjects[subjectName];
+            const todo = subject.todos.find(t => t.id === todoId);
+            
+            if (!todo || todo.completed) return;
+            
+            if (todo.isRunning) {
+                // නවත්වන්න
+                const elapsed = Date.now() - todo.startTime;
+                todo.activeTime = (todo.activeTime || 0) + elapsed;
+                todo.isRunning = false;
+                todo.startTime = null;
+            } else {
+                // ආරම්භ කරන්න - මේ විෂයෙ අනෙක් ක්‍රියාත්මක වැඩ නවත්වන්න
+                subject.todos.forEach(t => {
+                    if (t.isRunning && t.id !== todoId) {
+                        const elapsed = Date.now() - t.startTime;
+                        t.activeTime = (t.activeTime || 0) + elapsed;
+                        t.isRunning = false;
+                        t.startTime = null;
+                    }
+                });
+                
+                todo.isRunning = true;
+                todo.startTime = Date.now();
+            }
+            
+            saveData();
+            renderTodos(subjectName);
+        }
+
+        function toggleTodo(subjectName, todoId) {
+            const subject = subjects[subjectName];
+            const todo = subject.todos.find(t => t.id === todoId);
+            
+            if (todo) {
+                if (!todo.completed) {
+                    // වැඩේ ක්‍රියාත්මකව තිබේ නම් පළමුව නවත්වන්න
+                    if (todo.isRunning) {
+                        const elapsed = Date.now() - todo.startTime;
+                        todo.activeTime = (todo.activeTime || 0) + elapsed;
+                        todo.isRunning = false;
+                        todo.startTime = null;
+                    }
+                    
+                    // සම්පූර්ණ කරන්න
+                    todo.completed = true;
+                    todo.completedTime = todo.activeTime || 0;
+                    subject.totalTime += todo.completedTime;
+                } else {
+                    // සම්පූර්ණ කිරීම අහෝසි කරන්න
+                    todo.completed = false;
+                    subject.totalTime -= todo.completedTime;
+                    todo.completedTime = 0;
+                }
+                
+                saveData();
+                renderTodos(subjectName);
+                updateChart();
+            }
+        }
+
+        function deleteTodo(subjectName, todoId) {
+            const subject = subjects[subjectName];
+            const todoIndex = subject.todos.findIndex(t => t.id === todoId);
+            
+            if (todoIndex !== -1) {
+                const todo = subject.todos[todoIndex];
+                
+                // ක්‍රියාත්මකව තිබේ නම් නවත්වන්න
+                if (todo.isRunning) {
+                    const elapsed = Date.now() - todo.startTime;
+                    todo.activeTime = (todo.activeTime || 0) + elapsed;
+                }
+                
+                // සම්පූර්ණ කළ වැඩක් නම් කාලය අඩු කරන්න
+                if (todo.completed && todo.completedTime) {
+                    subject.totalTime -= todo.completedTime;
+                }
+                
+                subject.todos.splice(todoIndex, 1);
+                saveData();
+                renderTodos(subjectName);
+                updateChart();
+            }
+        }
+
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            if (hours > 0) {
+                return `${hours}පැ ${minutes}මි ${seconds}තත`;
+            } else if (minutes > 0) {
+                return `${minutes}මි ${seconds}තත`;
+            }
+            return `${seconds}තත`;
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('timeChart');
+            if (!ctx) return;
+            
+            const labels = Object.keys(subjects);
+            const data = labels.map(name => {
+                let totalMs = subjects[name].totalTime;
+                if (subjects[name].isRunning && subjects[name].startTime) {
+                    totalMs += Date.now() - subjects[name].startTime;
+                }
+                return (totalMs / 3600000).toFixed(2);
+            });
+            
+            const colors = labels.map(name => subjects[name].color);
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            const textColor = isDarkTheme ? '#e0e7ff' : '#312e81';
+            const gridColor = isDarkTheme ? 'rgba(224, 231, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: isDarkTheme ? '#2d3748' : '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: { size: 12 },
+                                color: textColor
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: isDarkTheme ? '#1f2937' : '#ffffff',
+                            titleColor: textColor,
+                            bodyColor: textColor,
+                            borderColor: gridColor,
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    const hours = parseFloat(context.parsed);
+                                    const percentage = ((hours / 24) * 100).toFixed(1);
+                                    return `${context.label}: ${hours} පැය (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function saveData() {
+            localStorage.setItem('subjects', JSON.stringify(subjects));
+        }
+
+        setInterval(() => {
+            Object.keys(subjects).forEach(name => {
+                if (subjects[name].isRunning) {
+                    updateWatchDisplay(name);
+                }
+                
+                // වැඩ ලයිස්තුවේ ක්‍රියාත්මක වැඩ update කරන්න
+                if (subjects[name].todos) {
+                    subjects[name].todos.forEach(todo => {
+                        if (todo.isRunning) {
+                            renderTodos(name);
+                        }
+                    });
+                }
+            });
+            
+            // Chart එක update කරන්න ඕනෙ නම්
+            const hasRunning = Object.values(subjects).some(s => 
+                s.isRunning || (s.todos && s.todos.some(t => t.isRunning))
+            );
+            if (hasRunning) {
+                updateChart();
+            }
+        }, 1000);
+
+        document.getElementById('subjectInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addSubject();
+        });
+
+        loadTheme();
+        initializeData();
+    </script>
+</body>
+</html>
