@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>විෂය කාල ට්‍රැකර්</title>
+    <title>KINAA TIME TRACKER</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -266,7 +266,7 @@
     </button>
     
     <div class="max-w-7xl mx-auto">
-        <h1 class="text-4xl font-bold text-center text-theme mb-8">විෂය කාල ට්‍රැකර්</h1>
+        <h1 class="text-4xl font-bold text-center text-theme mb-8">KINAA TIME TRACKER</h1>
         
         <div class="card rounded-lg shadow-lg p-6 mb-6">
             <div class="flex gap-4 mb-4">
@@ -274,7 +274,7 @@
                     class="flex-1 px-4 py-2 border-2 border-indigo-300 rounded-lg focus:outline-none focus:border-indigo-500">
                 <button onclick="addSubject()" 
                     class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-semibold transition">
-                    විෂයක් එකතු කරන්න
+                    ADD A SUBJECT
                 </button>
             </div>
         </div>
@@ -285,13 +285,13 @@
             </div>
             
             <div class="card rounded-lg shadow-lg p-6">
-                <h2 class="text-2xl font-bold text-theme mb-4">වාඩ ලයිස්තුව</h2>
+                <h2 class="text-2xl font-bold text-theme mb-4">TASKS</h2>
                 <div id="todoContainer" class="space-y-4"></div>
             </div>
         </div>
 
         <div class="card rounded-lg shadow-lg p-6">
-            <h2 class="text-2xl font-bold text-theme mb-4 text-center">24 පැය කාල බෙදුම</h2>
+            <h2 class="text-2xl font-bold text-theme mb-4 text-center">24 HOUR</h2>
             <div class="relative" style="height: 400px;">
                 <canvas id="timeChart"></canvas>
             </div>
@@ -312,11 +312,11 @@
             if (isDarkTheme) {
                 body.classList.add('dark-theme');
                 icon.textContent = '☀️';
-                text.textContent = 'ලයිට්';
+                text.textContent = 'LIGHT';
             } else {
                 body.classList.remove('dark-theme');
                 icon.textContent = '🌙';
-                text.textContent = 'ඩාර්ක්';
+                text.textContent = 'DARK';
             }
             
             localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
@@ -329,7 +329,7 @@
                 isDarkTheme = true;
                 document.body.classList.add('dark-theme');
                 document.getElementById('themeIcon').textContent = '☀️';
-                document.getElementById('themeText').textContent = 'ලයිට්';
+                document.getElementById('themeText').textContent = 'LIGHT';
             }
         }
 
@@ -834,4 +834,5 @@
         initializeData();
     </script>
 </body>
+
 </html>
